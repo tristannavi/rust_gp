@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::mem::swap;
 
 use rand::{random, Rng};
+use rand::seq::SliceRandom;
 
 use crate::chromosome::GeneType::{Binary, Constant, Unary, Variable};
 use crate::functions;
@@ -22,6 +23,28 @@ impl Display for GeneType {
             Unary => write!(f, "Unary"),
             Binary => write!(f, "Binary")
         }
+    }
+}
+
+impl Clone for GeneType {
+    fn clone(&self) -> Self {
+        return match self {
+            Constant(i) => { Constant(i.clone()) }
+            Variable(i) => { Variable(i.clone()) }
+            Unary => { Unary }
+            Binary => { Binary }
+        };
+    }
+}
+
+impl Clone for Gene {
+    fn clone(&self) -> Self {
+        return Gene {
+            type_of_gene: self.type_of_gene.clone(),
+            left_ptr: self.left_ptr,
+            right_ptr: self.right_ptr,
+            ops: self.ops,
+        };
     }
 }
 
@@ -71,6 +94,15 @@ impl Gene {
         };
     }
 
+    /// Constructs a new unary gene.
+    ///
+    /// # Arguments
+    ///
+    /// * `curr_loc` - The current location in the genome (`Chromosome`).
+    ///
+    /// # Returns
+    ///
+    /// A `Gene` struct representing the unary gene.
     fn new_unary(curr_loc: usize) -> Gene {
         return Gene {
             type_of_gene: Unary,
@@ -80,6 +112,28 @@ impl Gene {
         };
     }
 
+    /// This function creates a new binary Gene.
+    ///
+    /// # Arguments
+    ///
+    /// * `curr_loc` - The location (index) of the `Gene` within the `Chromosome`.
+    ///
+    /// # Returns
+    ///
+    /// A `Gene` struct with the following fields:
+    /// * `type_of_gene` - The type of gene, which is set to `Binary`.
+    /// * `left_ptr` - A randomly generated value between 0 and `curr_loc`, representing the left pointer.
+    /// * `right_ptr` - A randomly generated value between 0 and `curr_loc`, representing the right pointer.
+    /// * `ops` - The binary function retrieved from the `get_binary_function` function.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use crate::Gene;
+    ///
+    /// let curr_loc = 10;
+    /// let gene = new_binary(curr_loc);
+    /// ```
     fn new_binary(curr_loc: usize) -> Gene {
         return Gene {
             type_of_gene: Binary,
@@ -110,6 +164,14 @@ impl Gene {
         (0.0, "nothing".to_string())
     }
 
+    /// Performs the operation on a gene using it's left and right pointers
+    ///
+    /// # Arguments
+    ///
+    /// * `chromosome`: The chromosome containing the genes
+    /// * `vec`: One row of the dataset
+    ///
+    /// returns: `f64`
     pub fn operation(&self, chromosome: &Chromosome, vec: &Vec<f64>) -> f64 {
         return match self.type_of_gene {
             Constant(x) => x,
@@ -119,18 +181,31 @@ impl Gene {
         };
     }
 
+    /// Returns the type of the function.
     pub fn get_type(&self) -> String {
         return ((&self).ops)(0.0, 0.0).1;
     }
 }
 
-// #[derive(Copy, Clone)]
+/// Represents a chromosome with genes and fitness value.
+#[derive(Clone)]
 pub struct Chromosome {
     pub genes: Vec<Gene>,
-    fitness_value: f64, // Not used yet
+    pub fitness_value: f64,
 }
 
 impl Chromosome {
+    /// Creates a new `Chromosome` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let chromosome = Chromosome::new();
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// A new `Chromosome` instance with an empty gene vector and maximum fitness value.
     pub fn new() -> Chromosome {
         Chromosome {
             genes: Vec::new(),
@@ -138,6 +213,15 @@ impl Chromosome {
         }
     }
 
+    /// Creates a new `Chromosome` from a given `genes_array`.
+    ///
+    /// # Arguments
+    ///
+    /// * `genes_array` - A `Vec<Gene>` containing the genes to be assigned to the `Chromosome`.
+    ///
+    /// # Returns
+    ///
+    /// A new `Chromosome` instance with the given genes and the maximum fitness value.
     pub fn new_from_genes_array(genes_array: Vec<Gene>) -> Chromosome {
         Chromosome {
             genes: genes_array,
@@ -179,10 +263,11 @@ impl Chromosome {
     ///
     /// * The fitness value as a `f64` number.
     pub fn evaluate_fitness(&self, vec: &Vec<f64>) -> f64 {
+        // self.fitness_value = self.genes[self.genes.len() - 1].operation(&self, vec);
         return self.genes[self.genes.len() - 1].operation(&self, vec);
     }
 
-    /// Calculates the mean squared error (MSE) fitness of the given dataset for the genetic algorithm.
+    /// Calculates the mean squared error (MSE) fitness of the given dataset for a `Chromosome`.
     ///
     /// The MSE fitness is a measure of how well the genetic algorithm's prediction matches the expected output.
     /// It is calculated by summing the squared differences between the predicted and expected values for each row in the dataset,
@@ -195,7 +280,7 @@ impl Chromosome {
     ///
     /// # Returns
     ///
-    /// Returns the calculated mean squared error as a `f64` value.
+    /// Returns the calculated mean squared error as a `f64` value. If the value calculated is infinity, it will return `f64::MAX`.
     ///
     /// # Examples
     ///
@@ -210,21 +295,40 @@ impl Chromosome {
     /// ];
     /// let mse = c.evaluate_fitness_mse(&dataset);
     /// ```
-    pub fn evaluate_fitness_mse(&self, vec: &Vec<Vec<f64>>) -> f64 {
+    pub fn evaluate_fitness_mse(&mut self, vec: &Vec<Vec<f64>>) -> f64 {
         let mut total: f64 = 0.0;
         for row in vec {
             let expected = row[row.len() - 1];
             let predicted = self.evaluate_fitness(row);
             total += (predicted - expected).powi(2);
-            // println!("{} {} {}", total, predicted, expected);
         }
-        return total / (vec.len() as f64);
+        return match total.is_infinite() {
+            true => {
+                self.fitness_value = f64::MAX;
+                f64::MAX
+            }
+            false => {
+                self.fitness_value = total;
+                total / (vec.len() as f64)
+            }
+        };
     }
 
     fn iter(&self) -> impl Iterator<Item=&Gene> {
         self.genes.iter()
     }
 
+    /// Returns the length of the genes array (`Chromosome`) in the provided instance.
+    ///
+    /// # Example
+    /// ```
+    /// let instance = Instance { genes: vec![1, 2, 3] };
+    /// assert_eq!(instance.len(), 3);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// - `usize`: The length of the genes array (`Chromosome`) in the provided instance.
     fn len(&self) -> usize {
         self.genes.len()
     }
@@ -251,9 +355,48 @@ impl Chromosome {
         }
         return builder.to_string();
     }
+
+    /// Shuffles the genes within the struct.
+    ///
+    /// This function shuffles the genes within the struct using the Fisher-Yates algorithm.
+    /// It modifies the genes in-place.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rand::seq::SliceRandom;
+    ///
+    /// // Create a new instance of the struct
+    /// let mut c = Chromosome::new();
+    ///
+    /// // Shuffle the genes within the struct
+    /// c.shuffle();
+    ///
+    /// // Print the shuffled genes
+    /// println!("{:?}", my_struct.genes);
+    /// ```
+    pub fn shuffle(&mut self) {
+        &self.genes.shuffle(&mut rand::thread_rng());
+    }
 }
 
 impl Chromosome {
+    /// Crosses the current chromosome with another chromosome.
+    ///
+    /// # Arguments
+    ///
+    /// * `parent_2` - A mutable reference to the second parent chromosome.
+    /// * `crossover_loc` - Optional. The index at which the crossover operation will start.
+    ///                    If not provided, a random index between 0 and the length of the current chromosome is chosen.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut chromosome_1 = Chromosome::new();
+    /// let mut chromosome_2 = Chromosome::new();
+    ///
+    /// chromosome_1.cross_with(&mut chromosome_2, None);
+    /// ```
     pub fn cross_with(&mut self, parent_2: &mut Chromosome, crossover_loc: Option<usize>) {
         let cross_loc = crossover_loc.unwrap_or(rand::thread_rng().gen_range(0..self.len()));
         for i in cross_loc..self.len() {
@@ -280,6 +423,18 @@ impl Chromosome {
 }
 
 impl Display for Chromosome {
+    ///
+    /// Formats the genes in a string and writes them to the given formatter.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - A mutable reference to a `std::fmt::Formatter` object.
+    ///
+    /// # Errors
+    ///
+    /// This function returns a `std::fmt::Result` object. It will return an
+    /// `Err` value if writing the formatted string to the formatter fails.
+    ///
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut string_builder = "".to_string();
         for gene in &self.genes {
