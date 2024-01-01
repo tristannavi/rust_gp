@@ -57,7 +57,7 @@ fn main() {
             .value_parser(value_parser!(f64)))
         .get_matches();
 
-    if (*matches.get_one::<usize>("population").unwrap() % 2 == 0) {
+    if *matches.get_one::<usize>("population").unwrap() % 2 == 0 {
         panic!("The number of individuals in the population must be odd for elitism to work")
     }
 
@@ -103,36 +103,3 @@ pub fn gp(gen: usize, pop_size: usize, num_genes: usize, mut_chance: f64, crosso
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
 }
-
-// pub fn debug_new() -> [Gene; 3] {
-//     pub fn add(x: f64, y: f64) -> f64 {
-//         x + y
-//     }
-//
-//     pub fn square(x: f64, _y: f64) -> f64 {
-//         x * x
-//     }
-//
-//     let mut genes = [
-//         Gene {
-//             type_of_gene: chromosome::GeneType::Binary,
-//             left_ptr: 1,
-//             right_ptr: 2,
-//             ops: add,
-//         },
-//         Gene {
-//             type_of_gene: chromosome::GeneType::Variable(1),
-//             left_ptr: 5,
-//             right_ptr: usize::MAX,
-//             ops: add,
-//         },
-//         Gene {
-//             type_of_gene: chromosome::GeneType::Constant(5.0),
-//             left_ptr: 5,
-//             right_ptr: usize::MAX,
-//             ops: add,
-//         },
-//     ];
-//
-//     genes
-// }
