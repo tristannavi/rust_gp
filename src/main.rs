@@ -6,11 +6,13 @@ use clap::{Arg, Command, Parser, value_parser};
 use rand::Rng;
 
 use crate::chromosome::Chromosome;
+use crate::population::{Mate, Population};
 use crate::read_dataset::read_csv;
 
 mod chromosome;
 mod functions;
 mod read_dataset;
+mod population;
 
 fn main() {
     let matches = Command::new("Rust GP")
