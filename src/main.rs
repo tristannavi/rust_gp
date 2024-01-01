@@ -1,4 +1,3 @@
-// #![allow(arithmetic_overflow)]
 use std::any::Any;
 use std::thread;
 
