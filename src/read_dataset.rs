@@ -7,7 +7,7 @@ pub fn read_csv(location: &str) -> Vec<Vec<f64>> {
 city;country;pop
 5.0;1.0;4.0
 ";
-    let mut rdr = ReaderBuilder::new().from_path("E:\\Code\\rust_gp\\VOLUNTEER1_trial_1_duplicate_task_na_control.csv");
+    let mut rdr = ReaderBuilder::new().from_path(location);
 
     for r in rdr.unwrap().records() {
         let record = r.unwrap();
