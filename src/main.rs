@@ -1,5 +1,6 @@
 // #![allow(arithmetic_overflow)]
 use std::any::Any;
+use std::thread;
 
 use clap::{Arg, Command, Parser, value_parser};
 use rand::Rng;
@@ -70,6 +71,8 @@ fn main() {
 }
 
 pub fn gp(gen: usize, pop_size: usize, num_genes: usize, mut_chance: f64, crossover_chance: f64, dataset: Vec<Vec<f64>>) {
+    use std::time::Instant;
+    let now = Instant::now();
     let mut population = Population::new();
 
     for _p in 0..pop_size {
@@ -77,22 +80,28 @@ pub fn gp(gen: usize, pop_size: usize, num_genes: usize, mut_chance: f64, crosso
     }
 
     for g in 0..gen {
-        for mut i in &mut population {
-            i.evaluate_fitness_mse(&dataset);
-        }
-        population = population.mate(dataset[0].len() - 2);
+        thread::scope(|s| {
+            for mut i in &mut population {
+                s.spawn(|| {
+                    let temp1 = i.evaluate_fitness_mse(&dataset);
+                });
+            }
+        });
+        population = population.mate(dataset[0].len() - 2, crossover_chance, mut_chance);
     }
 
-    println!("{}", population.find_best_min().evaluate_fitness_mse(&dataset))
+    //INFO: Ensures that all threads have finished before getting here
+    let mut temp = 0;
+    for x in &population {
+        if !x.accessed { temp += 1 }
+    }
+    assert_eq!(temp, 0);
+
+    println!("{}", population.find_best_min().evaluate_fitness_mse(&dataset));
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}", elapsed);
 }
 
-fn min_selection(population: &Vec<Chromosome>) -> &Chromosome {
-    // Selects a random chromosome from the population
-    let select_random = || -> &Chromosome { &population[rand::thread_rng().gen_range(0..population.len())] };
-    let c1 = select_random();
-    let c2 = select_random();
-    return if (c1.fitness_value > c2.fitness_value) { c1 } else { c2 };
-}
 // pub fn debug_new() -> [Gene; 3] {
 //     pub fn add(x: f64, y: f64) -> f64 {
 //         x + y

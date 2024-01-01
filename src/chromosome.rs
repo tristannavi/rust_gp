@@ -8,7 +8,7 @@ use crate::chromosome::GeneType::{Binary, Constant, Unary, Variable};
 use crate::functions;
 
 #[derive(Debug)]
-pub(crate) enum GeneType {
+pub enum GeneType {
     Constant(f64),
     Variable(usize),
     Unary,
@@ -192,6 +192,7 @@ impl Gene {
 pub struct Chromosome {
     pub genes: Vec<Gene>,
     pub fitness_value: f64,
+    pub accessed: bool,
 }
 
 impl Chromosome {
@@ -210,6 +211,7 @@ impl Chromosome {
         Chromosome {
             genes: Vec::new(),
             fitness_value: f64::MAX,
+            accessed: false,
         }
     }
 
@@ -226,6 +228,7 @@ impl Chromosome {
         Chromosome {
             genes: genes_array,
             fitness_value: f64::MAX,
+            accessed: false, // Thread testing
         }
     }
 
@@ -304,10 +307,12 @@ impl Chromosome {
         }
         return match total.is_infinite() {
             true => {
+                self.accessed = true; // Thread testing
                 self.fitness_value = f64::MAX;
                 f64::MAX
             }
             false => {
+                self.accessed = true; // Thread testing
                 self.fitness_value = total;
                 total / (vec.len() as f64)
             }
