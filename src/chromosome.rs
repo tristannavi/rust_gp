@@ -16,6 +16,7 @@ pub enum GeneType {
 }
 
 impl Display for GeneType {
+    /// Allows the to_string() function to work
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Constant(i) => write!(f, "Constant({})", i),
@@ -27,6 +28,7 @@ impl Display for GeneType {
 }
 
 impl Clone for GeneType {
+    /// Allows cloning
     fn clone(&self) -> Self {
         return match self {
             Constant(i) => { Constant(i.clone()) }
@@ -38,6 +40,7 @@ impl Clone for GeneType {
 }
 
 impl Clone for Gene {
+    /// Allows cloning
     fn clone(&self) -> Self {
         return Gene {
             type_of_gene: self.type_of_gene.clone(),
@@ -49,6 +52,7 @@ impl Clone for Gene {
 }
 
 impl Display for Gene {
+    /// Allows the to_string() function to work
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.type_of_gene {
             Constant(i) => write!(f, "Constant({})[{}, {}]", i, self.left_ptr, self.right_ptr),
@@ -68,6 +72,17 @@ pub struct Gene {
 
 
 impl Gene {
+    /// Creates a new Gene based on the given parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `curr_loc` - The current location in the chromosome.
+    /// * `num_variables` - The number of variables.
+    /// * `first_or_second_in_chromosome` - Flag indicating if the Gene is the first or second in the chromosome.
+    ///
+    /// # Returns
+    ///
+    /// Returns a newly created Gene.
     pub fn new(curr_loc: usize, num_variables: usize, first_or_second_in_chromosome: bool) -> Gene {
         return if random() || first_or_second_in_chromosome {
             if random() { Gene::new_constant(None) } else { Gene::new_variable(num_variables) }
@@ -76,6 +91,15 @@ impl Gene {
         };
     }
 
+    /// Creates a new Gene with a constant value.
+    ///
+    /// # Arguments
+    ///
+    /// * `constant` - An optional f64 value to set as the constant. If `None`, a random value will be used.
+    ///
+    /// # Returns
+    ///
+    /// A new Gene instance with the specified constant value.
     fn new_constant(constant: Option<f64>) -> Gene {
         return Gene {
             type_of_gene: Constant(constant.unwrap_or(random())),
@@ -85,6 +109,20 @@ impl Gene {
         };
     }
 
+    /// Create a new Gene with a variable type.
+    ///
+    /// # Arguments
+    ///
+    /// * `num_variables` - The total number of variables available.
+    ///
+    /// # Returns
+    ///
+    /// A new Gene object with the following properties:
+    ///
+    /// * `type_of_gene` - Represents the variable type, generated randomly from the range [0, num_variables - 1].
+    /// * `left_ptr` - Represents the pointer to the left node (initially set to 0).
+    /// * `right_ptr` - Represents the pointer to the right node (initially set to 0).
+    /// * `ops` - Represents the operations associated with the gene.
     fn new_variable(num_variables: usize) -> Gene {
         return Gene {
             type_of_gene: Variable(rand::thread_rng().gen_range(0..num_variables - 1)),
@@ -305,18 +343,19 @@ impl Chromosome {
             let predicted = self.evaluate_fitness(row);
             total += (predicted - expected).powi(2);
         }
-        return match total.is_infinite() {
+        total = total / (vec.len() as f64);
+        match total.is_infinite() {
             true => {
                 self.accessed = true; // Thread testing
                 self.fitness_value = f64::MAX;
-                f64::MAX
             }
             false => {
                 self.accessed = true; // Thread testing
                 self.fitness_value = total;
-                total / (vec.len() as f64)
             }
         };
+
+        return self.fitness_value;
     }
 
     fn iter(&self) -> impl Iterator<Item=&Gene> {
