@@ -13,6 +13,8 @@ mod chromosome;
 mod functions;
 mod io;
 mod population;
+mod island;
+mod gp;
 
 fn main() {
     let matches = Command::new("Rust GP")
