@@ -7,10 +7,11 @@ use rand::Rng;
 use crate::chromosome::Chromosome;
 use crate::population::{Mate, Population};
 use crate::read_dataset::read_csv;
+use crate::io::read_csv;
 
 mod chromosome;
 mod functions;
-mod read_dataset;
+mod io;
 mod population;
 
 fn main() {
@@ -61,7 +62,7 @@ fn main() {
     }
 
     let dataset = read_csv(matches.get_one::<String>("file").unwrap());
-    gp(
+    gp::gp(
         *matches.get_one::<usize>("generations").unwrap(),
         *matches.get_one::<usize>("population").unwrap(),
         *matches.get_one::<usize>("num genes").unwrap(),
@@ -69,36 +70,4 @@ fn main() {
         *matches.get_one::<f64>("crossover chance").unwrap(),
         dataset,
     );
-}
-
-pub fn gp(gen: usize, pop_size: usize, num_genes: usize, mut_chance: f64, crossover_chance: f64, dataset: Vec<Vec<f64>>) {
-    use std::time::Instant;
-    let now = Instant::now();
-    let mut population = Population::new();
-
-    for _p in 0..pop_size {
-        population.push(Chromosome::new_x(num_genes, dataset[0].len() - 2))
-    }
-
-    for g in 0..gen {
-        thread::scope(|s| {
-            for mut i in &mut population {
-                s.spawn(|| {
-                    i.evaluate_fitness_mse(&dataset);
-                });
-            }
-        });
-        population = population.mate(dataset[0].len() - 2, crossover_chance, mut_chance);
-    }
-
-    //INFO: Ensures that all threads have finished before getting here
-    let mut temp = 0;
-    for x in &population {
-        if !x.accessed { temp += 1 }
-    }
-    assert_eq!(temp, 0);
-
-    println!("{}", population.find_best_min().evaluate_fitness_mse(&dataset));
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
 }
