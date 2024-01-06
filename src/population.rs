@@ -2,22 +2,34 @@ use rand::Rng;
 
 use crate::chromosome::Chromosome;
 
-pub trait Mate {
-    fn mate(&self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> Population;
+pub struct PopulationParameters {
+    pub generations: usize,
+    pub population_size: usize,
+    pub num_genes: usize,
+    pub mut_chance: f64,
+    pub crossover_chance: f64,
+    pub dataset: Vec<Vec<f64>>,
+}
+
+pub trait PopulationTraits {
+    fn mate(&self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> (Population, f64);
     fn find_best_min(self) -> Chromosome;
     fn new() -> Population;
     fn tournament_selection(&self) -> &Chromosome;
     fn get_random_chromosome(&self) -> &Chromosome;
+    fn evaluate_fitness(&mut self, dataset: &Vec<Vec<f64>>);
 }
 
 pub type Population = Vec<Chromosome>;
+pub type Island = Population;
 
-impl Mate for Population {
-    fn mate(&self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> Population {
+impl PopulationTraits for Population {
+    fn mate(&self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> (Population, f64) {
         let mut new_population = Population::new();
 
         // Elitism by adding the best out of the entire population to the new population
         let best = self.clone().find_best_min();
+        let best_fitness = best.fitness_value;
         new_population.push(best);
         for i in (1..self.len()).step_by(2) {
             let mut offspring_one = self.tournament_selection().clone();
@@ -30,8 +42,7 @@ impl Mate for Population {
             new_population.push(offspring_one);
             new_population.push(offspring_two);
         }
-
-        return new_population;
+        return (new_population, best_fitness);
     }
 
     /// Returns the chromosome with the minimum fitness value in the given `Population`.
@@ -70,7 +81,7 @@ impl Mate for Population {
     ///
     /// A new `Population` object, initially empty.
     fn new() -> Population {
-        return vec![];
+        return vec![] as Population;
     }
 
     /// Performs tournament selection with k = 2 for the population
@@ -96,5 +107,11 @@ impl Mate for Population {
     /// Returns a reference to a randomly selected `Chromosome` from the `self` vector.
     fn get_random_chromosome(&self) -> &Chromosome {
         return &self[rand::thread_rng().gen_range(0..self.len())];
+    }
+
+    fn evaluate_fitness(&mut self, dataset: &Vec<Vec<f64>>) {
+        for mut i in self {
+            i.evaluate_fitness_mse(&dataset);
+        }
     }
 }
