@@ -1,26 +1,21 @@
-use std::any::Any;
-use std::thread;
-
 use clap::{Arg, Command, Parser, value_parser};
 use rand::Rng;
 
-use crate::chromosome::Chromosome;
-use crate::population::{Mate, Population};
-use crate::read_dataset::read_csv;
 use crate::io::read_csv;
 
 mod chromosome;
 mod functions;
-mod io;
-mod population;
-mod island;
 mod gp;
+mod io;
+mod island;
+mod population;
 
 fn main() {
     let matches = Command::new("Rust GP")
         .version("0.1.0")
         .author("")
-        .about("Genetic Program that uses an acyclic graph representation and (probably) fitness predictors")
+        .about("Genetic Program that uses an acyclic graph representation to perform symbolic regression. \
+                Symbolic regression is performed using the last column of the provided dataset.")
         .arg(Arg::new("file")
             .short('f')
             .long("file")
