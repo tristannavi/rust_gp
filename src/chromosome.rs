@@ -233,6 +233,7 @@ pub struct Chromosome {
     pub accessed: bool,
 }
 
+// TODO: add combine method for combining islands
 impl Chromosome {
     /// Creates a new `Chromosome` instance.
     ///
