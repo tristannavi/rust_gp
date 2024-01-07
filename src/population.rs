@@ -25,7 +25,6 @@ pub trait PopulationTraits {
 }
 
 pub type Population = Vec<Chromosome>;
-pub type Island = Population;
 
 impl PopulationTraits for Population {
     /// Mate the individuals in the population to create a new population.
@@ -148,11 +147,13 @@ impl PopulationTraits for Population {
         return population;
     }
 
+    //Seems slower when mut is not used
+    #[allow(unused_mut)]
     fn evaluate(&mut self, dataset: &Dataset) {
         thread::scope(|s| {
             for mut i in self {
                 s.spawn(|| {
-                    i.evaluate_fitness_mse(&dataset);
+                    i.evaluate_fitness_mse(dataset);
                 });
             }
         });

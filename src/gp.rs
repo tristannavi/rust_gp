@@ -1,6 +1,3 @@
-//Seems slower when mut is not used
-#![allow(unused_mut)]
-
 use std::time::Instant;
 
 use crate::io::{Dataset, DataToWrite};

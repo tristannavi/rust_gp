@@ -86,9 +86,7 @@ impl Gene {
     pub fn new(curr_loc: usize, num_variables: usize, first_or_second_in_chromosome: bool) -> Gene {
         return if random() || first_or_second_in_chromosome {
             if random() { Gene::new_constant(None) } else { Gene::new_variable(num_variables) }
-        } else {
-            if random() { Gene::new_binary(curr_loc) } else { Gene::new_unary(curr_loc) }
-        };
+        } else if random() { Gene::new_binary(curr_loc) } else { Gene::new_unary(curr_loc) };
     }
 
     /// Creates a new Gene with a constant value.
@@ -221,7 +219,7 @@ impl Gene {
 
     /// Returns the type of the function.
     pub fn get_type(&self) -> String {
-        return ((&self).ops)(0.0, 0.0).1;
+        return (self.ops)(0.0, 0.0).1;
     }
 }
 
@@ -304,9 +302,8 @@ impl Chromosome {
     /// # Returns
     ///
     /// * The fitness value as a `f64` number.
-    pub fn evaluate_fitness(&self, vec: &Vec<f64>) -> f64 {
-        // self.fitness_value = self.genes[self.genes.len() - 1].operation(&self, vec);
-        return self.genes[self.genes.len() - 1].operation(&self, vec);
+    fn evaluate_fitness(&self, vec: &Vec<f64>) -> f64 {
+        return self.genes[self.genes.len() - 1].operation(self, vec);
     }
 
     /// Calculates the mean squared error (MSE) fitness of the given dataset for a `Chromosome`.
@@ -483,7 +480,7 @@ impl Display for Chromosome {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut string_builder = "".to_string();
         for gene in &self.genes {
-            string_builder.push_str(&*gene.to_string());
+            string_builder.push_str(&gene.to_string());
             string_builder.push(' ');
         }
         write!(f, "{}", string_builder)
