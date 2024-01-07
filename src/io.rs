@@ -19,7 +19,7 @@ pub fn read_csv(location: &str) -> Vec<Vec<f64>> {
     return csv;
 }
 
-type Dataset = Vec<Vec<f64>>;
+pub type Dataset = Vec<Vec<f64>>;
 
 pub struct DataToWrite {
     pub(crate) generation: usize,

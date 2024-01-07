@@ -4,28 +4,18 @@
 use std::thread;
 use std::time::Instant;
 
-use crate::chromosome::Chromosome;
-use crate::io::DataToWrite;
+use crate::io::{Dataset, DataToWrite};
 use crate::island::{Archipelago, ArchipelagoTraits, IslandParameters};
 use crate::population::{Population, PopulationParameters, PopulationTraits};
 
 pub fn gp(gen: usize, pop_size: usize, num_genes: usize, mut_chance: f64, crossover_chance: f64, dataset: Vec<Vec<f64>>) {
     let now = Instant::now();
-    let mut population = Population::new();
+    let mut population = Population::initialize(pop_size, num_genes, &dataset);
     let mut fitness_graph: Vec<DataToWrite> = vec![];
 
-    for _p in 0..pop_size {
-        population.push(Chromosome::new_x(num_genes, dataset[0].len() - 2))
-    }
 
     for g in 0..gen {
-        thread::scope(|s| {
-            for mut i in &mut population {
-                s.spawn(|| {
-                    i.evaluate_fitness_mse(&dataset);
-                });
-            }
-        });
+        population.evaluate(&dataset);
 
         let best;
         (population, best) = population.mate(dataset[0].len() - 2, crossover_chance, mut_chance);

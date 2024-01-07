@@ -1,6 +1,10 @@
+use std::thread;
+
 use rand::Rng;
 
 use crate::chromosome::Chromosome;
+use crate::io::Dataset;
+use crate::island::IslandParameters;
 
 pub struct PopulationParameters {
     pub generations: usize,
@@ -8,17 +12,18 @@ pub struct PopulationParameters {
     pub num_genes: usize,
     pub mut_chance: f64,
     pub crossover_chance: f64,
-    pub dataset: Vec<Vec<f64>>,
+    pub island_parameters: IslandParameters,
 }
 
 pub trait PopulationTraits {
     fn mate(&self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> (Population, f64);
     fn find_best_min(self) -> Chromosome;
-    fn new() -> Self;
+    fn new() -> Population;
     fn tournament_selection(&self) -> &Chromosome;
     fn get_random_chromosome(&self) -> &Chromosome;
-    fn evaluate_fitness(&mut self, dataset: &Vec<Vec<f64>>);
     fn all_accessed(&mut self);
+    fn initialize(size: usize, num_genes: usize, dataset: &Dataset) -> Population;
+    fn evaluate(&mut self, dataset: &Dataset);
 }
 
 pub type Population = Vec<Chromosome>;
@@ -110,13 +115,6 @@ impl PopulationTraits for Population {
         return &self[rand::thread_rng().gen_range(0..self.len())];
     }
 
-    #[allow(unused_mut)]
-    fn evaluate_fitness(&mut self, dataset: &Vec<Vec<f64>>) {
-        for mut i in self {
-            i.evaluate_fitness_mse(&dataset);
-        }
-    }
-
     fn all_accessed(&mut self) {
         let mut count = 0;
         for c in self {
@@ -126,5 +124,24 @@ impl PopulationTraits for Population {
             c.accessed = false;
         }
         assert_eq!(count, 0, "Not all chromosomes in this population were evaluated");
+    }
+
+    fn initialize(size: usize, num_genes: usize, dataset: &Dataset) -> Population {
+        let mut population = vec![];
+        for _p in 0..size {
+            population.push(Chromosome::new_x(num_genes, dataset[0].len() - 2))
+        }
+
+        return population;
+    }
+
+    fn evaluate(&mut self, dataset: &Dataset) {
+        thread::scope(|s| {
+            for mut i in self {
+                s.spawn(|| {
+                    i.evaluate_fitness_mse(&dataset);
+                });
+            }
+        });
     }
 }
