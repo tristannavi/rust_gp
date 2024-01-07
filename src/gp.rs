@@ -30,14 +30,11 @@ pub fn gp(gen: usize, pop_size: usize, num_genes: usize, mut_chance: f64, crosso
         let best;
         (population, best) = population.mate(dataset[0].len() - 2, crossover_chance, mut_chance);
         fitness_graph.push(DataToWrite { generation: g, fitness: best });
+
+        //INFO: Ensures that all threads have finished before getting here (all chromosomes were evaluated)
+        population.all_accessed();
     }
 
-    //INFO: Ensures that all threads have finished before getting here
-    let mut temp = 0;
-    for x in &population {
-        if !x.accessed { temp += 1 }
-    }
-    assert_eq!(temp, 0);
 
     println!("{}", population.find_best_min().evaluate_fitness_mse(&dataset));
     let elapsed = now.elapsed();

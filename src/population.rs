@@ -18,6 +18,7 @@ pub trait PopulationTraits {
     fn tournament_selection(&self) -> &Chromosome;
     fn get_random_chromosome(&self) -> &Chromosome;
     fn evaluate_fitness(&mut self, dataset: &Vec<Vec<f64>>);
+    fn all_accessed(&mut self);
 }
 
 pub type Population = Vec<Chromosome>;
@@ -114,5 +115,16 @@ impl PopulationTraits for Population {
         for mut i in self {
             i.evaluate_fitness_mse(&dataset);
         }
+    }
+
+    fn all_accessed(&mut self) {
+        let mut count = 0;
+        for c in self {
+            if !c.accessed {
+                count += 1;
+            }
+            c.accessed = false;
+        }
+        assert_eq!(count, 0, "Not all chromosomes in this population were evaluated");
     }
 }
