@@ -14,6 +14,8 @@ mod island;
 mod population;
 
 fn main() {
+    let x = env::current_dir().unwrap().display().to_string();
+
     let matches = Command::new("Rust GP")
         .version("0.1.0")
         .author("")
@@ -22,8 +24,8 @@ fn main() {
         .arg(Arg::new("file")
             .short('f')
             .long("file")
-            .help("A CSV file containing the values you are trying to regress toward with symbolic regression")
-            .default_value("E:\\Code\\rust_gp\\VOLUNTEER1_trial_1_duplicate_task_na_control.csv")
+            .help(format!("A CSV file containing the values you are trying to regress toward with symbolic regression. \
+                              Current path: {}", x))
             .value_parser(value_parser!(String)))
         .arg(Arg::new("num genes")
             .short('n')
