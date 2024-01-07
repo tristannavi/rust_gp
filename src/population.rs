@@ -4,7 +4,6 @@ use rand::Rng;
 
 use crate::chromosome::Chromosome;
 use crate::io::Dataset;
-use crate::island::IslandParameters;
 
 pub struct PopulationParameters {
     pub generations: usize,
@@ -12,12 +11,11 @@ pub struct PopulationParameters {
     pub num_genes: usize,
     pub mut_chance: f64,
     pub crossover_chance: f64,
-    pub island_parameters: IslandParameters,
 }
 
 pub trait PopulationTraits {
-    fn mate(&self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> (Population, f64);
-    fn find_best_min(self) -> Chromosome;
+    fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> f64;
+    fn find_best_min(&self) -> Chromosome;
     fn new() -> Population;
     fn tournament_selection(&self) -> &Chromosome;
     fn get_random_chromosome(&self) -> &Chromosome;
@@ -30,14 +28,26 @@ pub type Population = Vec<Chromosome>;
 pub type Island = Population;
 
 impl PopulationTraits for Population {
-    fn mate(&self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> (Population, f64) {
+    /// Mate the individuals in the population to create a new population.
+    ///
+    /// # Arguments
+    ///
+    /// * `num_variables` - The number of variables in the dataset.
+    /// * `crossover_chance` - The probability of crossover.
+    /// * `mutation_chance` - The probability of mutation.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the new population and the fitness value of the best individual.
+    /// Also replaces the population in memory
+    fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> f64 {
         let mut new_population = Population::new();
 
         // Elitism by adding the best out of the entire population to the new population
-        let best = self.clone().find_best_min();
+        let best = self.find_best_min();
         let best_fitness = best.fitness_value;
         new_population.push(best);
-        for _i in (1..self.len()).step_by(2) {
+        for _ in (1..self.len()).step_by(2) {
             let mut offspring_one = self.tournament_selection().clone();
             let mut offspring_two = self.tournament_selection().clone();
 
@@ -48,7 +58,10 @@ impl PopulationTraits for Population {
             new_population.push(offspring_one);
             new_population.push(offspring_two);
         }
-        return (new_population, best_fitness);
+
+        // Replace current Population with new Population
+        let _ = std::mem::replace(self, new_population);
+        return best_fitness;
     }
 
     /// Returns the chromosome with the minimum fitness value in the given `Population`.
@@ -63,8 +76,8 @@ impl PopulationTraits for Population {
     /// # Returns
     ///
     /// The chromosome with the minimum fitness value.
-    fn find_best_min(self) -> Chromosome {
-        let mut best = Chromosome::new();
+    fn find_best_min(&self) -> Chromosome {
+        let mut best = &Chromosome::new();
         for i in self {
             if i.fitness_value < best.fitness_value {
                 best = i;

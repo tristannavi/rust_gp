@@ -10,7 +10,6 @@ mod chromosome;
 mod functions;
 mod gp;
 mod io;
-mod island;
 mod population;
 
 fn main() {

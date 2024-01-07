@@ -39,3 +39,13 @@ pub fn write_graph_data(data: Vec<DataToWrite>, file_name: &str) {
         writeln!(file, "{}, {}", row.generation, row.fitness).expect("Problem writing to file")
     }
 }
+
+pub trait DatasetTraits {
+    fn get_num_variables(&self) -> usize;
+}
+
+impl DatasetTraits for Dataset {
+    fn get_num_variables(&self) -> usize {
+        return self[0].len() - 2;
+    }
+}
