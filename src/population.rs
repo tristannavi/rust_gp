@@ -14,7 +14,7 @@ pub struct PopulationParameters {
 pub trait PopulationTraits {
     fn mate(&self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> (Population, f64);
     fn find_best_min(self) -> Chromosome;
-    fn new() -> Population;
+    fn new() -> Self;
     fn tournament_selection(&self) -> &Chromosome;
     fn get_random_chromosome(&self) -> &Chromosome;
     fn evaluate_fitness(&mut self, dataset: &Vec<Vec<f64>>);
@@ -31,7 +31,7 @@ impl PopulationTraits for Population {
         let best = self.clone().find_best_min();
         let best_fitness = best.fitness_value;
         new_population.push(best);
-        for i in (1..self.len()).step_by(2) {
+        for _i in (1..self.len()).step_by(2) {
             let mut offspring_one = self.tournament_selection().clone();
             let mut offspring_two = self.tournament_selection().clone();
 
@@ -101,7 +101,7 @@ impl PopulationTraits for Population {
     fn tournament_selection(&self) -> &Chromosome {
         let c1 = self.get_random_chromosome();
         let c2 = self.get_random_chromosome();
-        return if (c1.fitness_value < c2.fitness_value) { c1 } else { c2 };
+        return if c1.fitness_value < c2.fitness_value { c1 } else { c2 };
     }
 
     /// Returns a reference to a randomly selected `Chromosome` from the `self` vector.
@@ -109,6 +109,7 @@ impl PopulationTraits for Population {
         return &self[rand::thread_rng().gen_range(0..self.len())];
     }
 
+    #[allow(unused_mut)]
     fn evaluate_fitness(&mut self, dataset: &Vec<Vec<f64>>) {
         for mut i in self {
             i.evaluate_fitness_mse(&dataset);

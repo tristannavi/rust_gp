@@ -344,7 +344,7 @@ impl Chromosome {
             let predicted = self.evaluate_fitness(row);
             total += (predicted - expected).powi(2);
         }
-        total = total / (vec.len() as f64);
+        total /= vec.len() as f64;
         match total.is_infinite() {
             true => {
                 self.accessed = true; // Thread testing
@@ -421,7 +421,7 @@ impl Chromosome {
     /// println!("{:?}", my_struct.genes);
     /// ```
     pub fn shuffle(&mut self) {
-        &self.genes.shuffle(&mut rand::thread_rng());
+        self.genes.shuffle(&mut rand::thread_rng());
     }
 }
 
@@ -484,7 +484,7 @@ impl Display for Chromosome {
         let mut string_builder = "".to_string();
         for gene in &self.genes {
             string_builder.push_str(&*gene.to_string());
-            string_builder.push_str(" ");
+            string_builder.push(' ');
         }
         write!(f, "{}", string_builder)
     }

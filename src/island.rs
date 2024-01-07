@@ -1,8 +1,6 @@
 use crate::chromosome::Chromosome;
 use crate::population::{Island, Population, PopulationParameters};
 
-// gen: usize, pop_size: usize, num_genes: usize, mut_chance: f64
-// , crossover_chance: f64, dataset: Vec<Vec<f64>>
 pub struct IslandParameters {
     pub population_parameters: PopulationParameters,
     pub num_islands: usize,
@@ -30,7 +28,7 @@ impl ArchipelagoTraits for Archipelago {
 
     fn initialize(p: &IslandParameters) -> Archipelago {
         let mut archipelago = vec![] as Archipelago;
-        for island in 0..p.num_islands {
+        for _island in 0..p.num_islands {
             archipelago.push(Population::new());
             for individual in 0..p.population_parameters.population_size {
                 archipelago[individual].push(Chromosome::new_x(

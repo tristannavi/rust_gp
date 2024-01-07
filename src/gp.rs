@@ -1,3 +1,6 @@
+//Seems slower when mut is not used
+#![allow(unused_mut)]
+
 use std::thread;
 use std::time::Instant;
 

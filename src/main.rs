@@ -1,5 +1,8 @@
-use clap::{Arg, Command, Parser, value_parser};
-use rand::Rng;
+#![allow(clippy::needless_return)]
+
+use std::env;
+
+use clap::{Arg, Command, value_parser};
 
 use crate::io::read_csv;
 

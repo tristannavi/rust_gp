@@ -8,7 +8,7 @@ use csv::ReaderBuilder;
 
 pub fn read_csv(location: &str) -> Vec<Vec<f64>> {
     let mut csv = Vec::new();
-    let mut rdr = ReaderBuilder::new().from_path(location);
+    let rdr = ReaderBuilder::new().from_path(location);
 
     for r in rdr.unwrap().records() {
         let record = r.unwrap();
@@ -28,7 +28,7 @@ pub struct DataToWrite {
 
 impl Display for DataToWrite {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}, {}\n", self.generation, self.fitness)
+        writeln!(f, "{}, {}", self.generation, self.fitness)
     }
 }
 
@@ -36,6 +36,6 @@ pub fn write_graph_data(data: Vec<DataToWrite>, file_name: &str) {
     let file = File::create(file_name).unwrap();
     let mut file = BufWriter::new(file);
     for row in data {
-        write!(file, "{}, {}\n", row.generation, row.fitness).expect("Problem writing to file")
+        writeln!(file, "{}, {}", row.generation, row.fitness).expect("Problem writing to file")
     }
 }

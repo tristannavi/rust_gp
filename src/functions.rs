@@ -22,7 +22,7 @@ pub fn subtract(x: f64, y: f64) -> (f64, String) {
 }
 
 pub fn divide(x: f64, y: f64) -> (f64, String) {
-    (if y == 0.0 { if (x >= 0.0) { f64::MAX } else { -1.0 * f64::MAX } } else { x / y }, "truediv".to_string())
+    (if y == 0.0 { if x >= 0.0 { f64::MAX } else { -1.0 * f64::MAX } } else { x / y }, "truediv".to_string())
 }
 
 pub fn multiply(x: f64, y: f64) -> (f64, String) {
