@@ -62,7 +62,7 @@ fn main() {
         panic!("The number of individuals in the population must be odd for elitism to work")
     }
 
-    let dataset = read_csv(matches.get_one::<String>("file").unwrap());
+    let dataset = read_csv(matches.get_one::<String>("file").expect("File must be provided"));
     gp::gp(
         *matches.get_one::<usize>("generations").unwrap(),
         *matches.get_one::<usize>("population").unwrap(),
