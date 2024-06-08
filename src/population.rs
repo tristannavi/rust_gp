@@ -1,6 +1,7 @@
 use std::thread;
 
 use rand::Rng;
+use rayon::iter::{IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::chromosome::Chromosome;
 use crate::io::Dataset;
@@ -147,15 +148,33 @@ impl PopulationTraits for Population {
         return population;
     }
 
-    //Seems slower when mut is not used
-    #[allow(unused_mut)]
+    /// Evaluates the fitness of each chromosome in the population using the mean squared error (MSE)
+    /// as the fitness function.
+    ///
+    ///
+    /// # Arguments
+    ///
+    /// * `dataset` - A reference to a `Dataset` containing the data to evaluate the chromosomes
+    /// against.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use genetic_algorithm::Population;
+    ///
+    /// let mut population = Population::new();
+    /// let dataset = vec![
+    ///     vec![1.0, 2.0, 3.0],
+    ///     vec![4.0, 5.0, 6.0],
+    ///     vec![7.0, 8.0, 9.0]
+    /// ];
+    /// population.evaluate(&dataset);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// None.
     fn evaluate(&mut self, dataset: &Dataset) {
-        thread::scope(|s| {
-            for mut i in self {
-                s.spawn(|| {
-                    i.evaluate_fitness_mse(dataset);
-                });
-            }
-        });
+        self.par_iter_mut().for_each(|mut i| { let  _ = i.evaluate_fitness_mse(dataset); });
     }
 }
