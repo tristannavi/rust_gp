@@ -1,7 +1,7 @@
 use std::thread;
 
 use rand::Rng;
-use rayon::iter::{IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::chromosome::Chromosome;
 use crate::io::Dataset;
@@ -41,23 +41,59 @@ impl PopulationTraits for Population {
     /// A tuple containing the new population and the fitness value of the best individual.
     /// Also replaces the population in memory
     fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> f64 {
-        let mut new_population = Population::new();
-
-        // Elitism by adding the best out of the entire population to the new population
-        let best = self.find_best_min();
-        let best_fitness = best.fitness_value;
-        new_population.push(best);
-        for _ in (1..self.len()).step_by(2) {
-            let mut offspring_one = self.tournament_selection().clone();
-            let mut offspring_two = self.tournament_selection().clone();
+        /// Takes a population, crossover chance, mutation chance, and number of variables as input
+        /// and returns a tuple of two new offspring chromosomes.
+        ///
+        /// # Arguments
+        ///
+        /// * `population` - A reference to a `Population` instance.
+        /// * `crossover_chance` - The chance of crossover as a floating-point number between 0 and 1.
+        /// * `mutation_chance` - The chance of mutation as a floating-point number between 0 and 1.
+        /// * `num_variables` - The number of variables in the chromosomes.
+        ///
+        /// # Returns
+        ///
+        /// A tuple containing two `Chromosome` instances representing the new offspring.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// let population = Population::new();
+        /// let crossover_chance = 0.8;
+        /// let mutation_chance = 0.1;
+        /// let num_variables = 5;
+        ///
+        /// let (offspring_one, offspring_two) = get_new_offspring(&population, crossover_chance, mutation_chance, num_variables);
+        ///
+        /// assert_eq!(offspring_one.num_variables(), num_variables);
+        /// assert_eq!(offspring_two.num_variables(), num_variables);
+        /// ```
+        fn get_new_offspring(population: &Population, crossover_chance: f64, mutation_chance: f64, num_variables: usize) -> (Chromosome, Chromosome) {
+            let mut offspring_one = population.tournament_selection().clone();
+            let mut offspring_two = population.tournament_selection().clone();
 
             if rand::thread_rng().gen_bool(crossover_chance) { offspring_one.cross_with(&mut offspring_two, None); }
             if rand::thread_rng().gen_bool(mutation_chance) { offspring_one.mutate(num_variables); }
             if rand::thread_rng().gen_bool(mutation_chance) { offspring_two.mutate(num_variables); }
 
-            new_population.push(offspring_one);
-            new_population.push(offspring_two);
+            return (offspring_one, offspring_two);
         }
+
+        // Elitism by adding the best out of the entire population to the new population
+        let best = self.find_best_min();
+        let best_fitness = best.fitness_value;
+
+        let mut new_population: Population = (1..self.len())
+            .into_par_iter()
+            .step_by(2)
+            .flat_map(|_| {
+                let (offspring_one, offspring_two) = get_new_offspring(self, crossover_chance, mutation_chance, num_variables);
+                return vec![offspring_one, offspring_two];
+            })
+            .collect();
+
+        // Add the best individual to the new population
+        new_population.push(best);
 
         // Replace current Population with new Population
         let _ = std::mem::replace(self, new_population);
@@ -175,6 +211,6 @@ impl PopulationTraits for Population {
     ///
     /// None.
     fn evaluate(&mut self, dataset: &Dataset) {
-        self.par_iter_mut().for_each(|mut i| { let  _ = i.evaluate_fitness_mse(dataset); });
+        self.par_iter_mut().for_each(|mut i| { let _ = i.evaluate_fitness_mse(dataset); });
     }
 }
