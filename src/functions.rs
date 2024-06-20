@@ -12,6 +12,20 @@ pub fn get_binary_function() -> fn(f64, f64) -> (f64, String) {
     binary_functions[random_string_index]
 }
 
+pub fn get_function_from_string(string: &str) -> fn(f64, f64) -> (f64, String) {
+    match string {
+        "add" => add,
+        "sub" => subtract,
+        "truediv" => divide,
+        "mul" => multiply,
+        "max" => max,
+        "min" => min,
+        "square" => square,
+        "log2" => log2,
+        _ => panic!("Invalid function string: {}", string),
+    }
+}
+
 // Binary Functions
 pub fn add(x: f64, y: f64) -> (f64, String) {
     (x + y, "add".to_string())

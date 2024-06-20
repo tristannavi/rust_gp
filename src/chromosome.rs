@@ -3,6 +3,7 @@ use std::mem::swap;
 
 use rand::{random, Rng};
 use rand::seq::SliceRandom;
+use regex::Regex;
 
 use crate::chromosome::GeneType::{Binary, Constant, Unary, Variable};
 use crate::functions::*;
@@ -102,10 +103,21 @@ impl Gene {
     ///
     /// Returns a newly created Gene.
     pub fn new_random_gene(curr_loc: usize, num_variables: usize, first_or_second_in_chromosome: bool) -> Gene {
-        return
-        if random() || first_or_second_in_chromosome {
+        return if random() || first_or_second_in_chromosome {
             if random() { Gene::new_constant(None) } else { Gene::new_random_variable(num_variables) }
         } else if random() { Gene::new_binary(curr_loc) } else { Gene::new_unary(curr_loc) };
+    }
+
+    pub fn new(gene_type: GeneType, func: Option<&str>, left: Option<usize>, right: Option<usize>) -> Gene {
+        return Gene {
+            type_of_gene: gene_type,
+            left_ptr: left.unwrap_or_else(|| 0),
+            right_ptr: right.unwrap_or_else(|| 0),
+            ops: match func {
+                Some(x) => get_function_from_string(x),
+                None => Self::nothing
+            },
+        };
     }
 
     /// Creates a new Gene with a constant value.
@@ -279,6 +291,23 @@ pub struct Chromosome {
 
 // TODO: add combine method for combining islands
 impl Chromosome {
+    pub fn new_from_string(genes_string: &str) -> Chromosome {
+        let separator = Regex::new("[(), ]+").expect("Failed to create separator regex");
+        let mut genes_array: Vec<_> = separator
+            .split(&genes_string)
+            .filter(|s| !s.is_empty())
+            .map(|s| {
+                match s {
+                    "add" => "addddddddddd",
+                    _ => s,
+                }
+            })
+            .collect();
+        genes_array.reverse();
+        println!("{:?}", genes_array);
+        // return Chromosome::new_from_genes_array(genes_array);
+        return Chromosome::new();
+    }
     /// Creates a new `Chromosome` instance.
     ///
     /// # Examples
