@@ -101,9 +101,10 @@ impl Gene {
     /// # Returns
     ///
     /// Returns a newly created Gene.
-    pub fn new(curr_loc: usize, num_variables: usize, first_or_second_in_chromosome: bool) -> Gene {
-        return if random() || first_or_second_in_chromosome {
-            if random() { Gene::new_constant(None) } else { Gene::new_variable(num_variables) }
+    pub fn new_random_gene(curr_loc: usize, num_variables: usize, first_or_second_in_chromosome: bool) -> Gene {
+        return
+        if random() || first_or_second_in_chromosome {
+            if random() { Gene::new_constant(None) } else { Gene::new_random_variable(num_variables) }
         } else if random() { Gene::new_binary(curr_loc) } else { Gene::new_unary(curr_loc) };
     }
 
@@ -116,7 +117,7 @@ impl Gene {
     /// # Returns
     ///
     /// A new Gene instance with the specified constant value.
-    fn new_constant(constant: Option<f64>) -> Gene {
+    pub fn new_constant(constant: Option<f64>) -> Gene {
         return Gene {
             type_of_gene: Constant(constant.unwrap_or(random())),
             left_ptr: 0,
@@ -135,13 +136,22 @@ impl Gene {
     ///
     /// A new Gene object with the following properties:
     ///
-    /// * `type_of_gene` - Represents the variable type, generated randomly from the range [0, num_variables - 1].
+    /// * `type_of_gene` - Represents the variable type, generated randomly from the range [0, num_variables].
     /// * `left_ptr` - Represents the pointer to the left node (initially set to 0).
     /// * `right_ptr` - Represents the pointer to the right node (initially set to 0).
     /// * `ops` - Represents the operations associated with the gene.
-    fn new_variable(num_variables: usize) -> Gene {
+    pub fn new_random_variable(num_variables: usize) -> Gene {
         return Gene {
-            type_of_gene: Variable(rand::thread_rng().gen_range(0..num_variables - 1)),
+            type_of_gene: Variable(rand::thread_rng().gen_range(0..num_variables)),
+            left_ptr: 0,
+            right_ptr: 0,
+            ops: Gene::nothing,
+        };
+    }
+
+    pub fn new_variable(variable_number: usize) -> Gene {
+        return Gene {
+            type_of_gene: Variable(variable_number),
             left_ptr: 0,
             right_ptr: 0,
             ops: Gene::nothing,
@@ -157,12 +167,21 @@ impl Gene {
     /// # Returns
     ///
     /// A `Gene` struct representing the unary gene.
-    fn new_unary(curr_loc: usize) -> Gene {
+    pub fn new_unary(curr_loc: usize) -> Gene {
         return Gene {
             type_of_gene: Unary,
             left_ptr: rand::thread_rng().gen_range(0..curr_loc),
             right_ptr: 0,
             ops: get_unary_function(),
+        };
+    }
+
+    pub fn new_unary2(left: usize, func: fn(f64, f64) -> (f64, String)) -> Gene {
+        return Gene {
+            type_of_gene: Unary,
+            left_ptr: left,
+            right_ptr: 0,
+            ops: func,
         };
     }
 
@@ -188,12 +207,21 @@ impl Gene {
     /// let curr_loc = 10;
     /// let gene = new_binary(curr_loc);
     /// ```
-    fn new_binary(curr_loc: usize) -> Gene {
+    pub fn new_binary(curr_loc: usize) -> Gene {
         return Gene {
             type_of_gene: Binary,
             left_ptr: rand::thread_rng().gen_range(0..curr_loc),
             right_ptr: rand::thread_rng().gen_range(0..curr_loc),
             ops: get_binary_function(),
+        };
+    }
+
+    pub fn new_binary2(curr_loc: usize, curr_loc2: usize, func: fn(f64, f64) -> (f64, String)) -> Gene {
+        return Gene {
+            type_of_gene: Binary,
+            left_ptr: curr_loc,
+            right_ptr: curr_loc2,
+            ops: func,
         };
     }
 
@@ -236,7 +264,7 @@ impl Gene {
     }
 
     /// Returns the type of the function.
-    pub fn get_type(&self) -> String {
+    pub fn get_operator(&self) -> String {
         return (self.ops)(0.0, 0.0).1;
     }
 }
@@ -306,7 +334,7 @@ impl Chromosome {
     pub fn new_x(num_genes: usize, num_variables: usize) -> Chromosome {
         let mut c = Chromosome::new();
         for i in 0..num_genes {
-            c.genes.push(Gene::new(i, num_variables, i == 1 || i == 0))
+            c.genes.push(Gene::new_random_gene(i, num_variables, i == 1 || i == 0))
         }
         return c;
     }
@@ -407,13 +435,17 @@ impl Chromosome {
                 builder.push_str(&format!("v{}", i));
             }
             Unary => {
-                builder.push_str(&format!("{}({})", &self.genes[pos].get_type(), &self.make_function_string(Some(self.genes[pos].left_ptr), builder.clone())))
+                builder.push_str(&format!("{}({})", &self.genes[pos].get_operator(), &self.make_function_string(Some(self.genes[pos].left_ptr), builder.clone())))
             }
             Binary => {
-                builder.push_str(&format!("{}({}, {})", &self.genes[pos].get_type(), &self.make_function_string(Some(self.genes[pos].left_ptr), builder.clone()), &self.make_function_string(Some(self.genes[pos].right_ptr), builder.clone())))
+                builder.push_str(&format!("{}({}, {})", &self.genes[pos].get_operator(), &self.make_function_string(Some(self.genes[pos].left_ptr), builder.clone()), &self.make_function_string(Some(self.genes[pos].right_ptr), builder.clone())))
             }
         }
         return builder.to_string();
+    }
+
+    pub fn function_string(&self) -> String {
+        self.make_function_string(None, String::new())
     }
 
     /// Shuffles the genes within the struct.
@@ -478,7 +510,7 @@ impl Chromosome {
     /// ```
     pub fn mutate(&mut self, num_variables: usize) {
         let mut_loc = rand::thread_rng().gen_range(0..self.len());
-        self.genes[mut_loc] = Gene::new(mut_loc, num_variables, (mut_loc == 0) || (mut_loc == 1))
+        self.genes[mut_loc] = Gene::new_random_gene(mut_loc, num_variables, (mut_loc == 0) || (mut_loc == 1))
     }
 }
 

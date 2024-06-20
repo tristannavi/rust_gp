@@ -1,3 +1,5 @@
+use std::thread;
+
 use rand::Rng;
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
 
@@ -13,7 +15,7 @@ pub struct PopulationParameters {
 }
 
 pub trait PopulationTraits {
-    fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> f64;
+    fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64, dataset: &Dataset) -> f64;
     fn find_best_min(&self) -> Chromosome;
     fn new() -> Population;
     fn tournament_selection(&self) -> &Chromosome;
@@ -38,7 +40,7 @@ impl PopulationTraits for Population {
     ///
     /// A tuple containing the new population and the fitness value of the best individual.
     /// Also replaces the population in memory
-    fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64) -> f64 {
+    fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64, dataset: &Dataset) -> f64 {
         /// Takes a population, crossover chance, mutation chance, and number of variables as input
         /// and returns a tuple of two new offspring chromosomes.
         ///
@@ -95,7 +97,8 @@ impl PopulationTraits for Population {
 
         // Replace current Population with new Population
         let _ = std::mem::replace(self, new_population);
-        return best_fitness;
+        self.evaluate(dataset);
+        return self.find_best_min().fitness_value;
     }
 
     /// Returns the chromosome with the minimum fitness value in the given `Population`.
