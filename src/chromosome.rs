@@ -1,11 +1,11 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::mem::swap;
 
 use rand::{random, Rng};
 use rand::seq::SliceRandom;
 
 use crate::chromosome::GeneType::{Binary, Constant, Unary, Variable};
-use crate::functions;
+use crate::functions::*;
 
 #[derive(Debug)]
 pub enum GeneType {
@@ -63,6 +63,24 @@ impl Display for Gene {
     }
 }
 
+impl Debug for Gene {
+    /// Allows the to_string() function to work
+
+
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        struct DebugGene {}
+
+        f.debug_struct("DebugGene")
+            .field("Type", &self.type_of_gene)
+            .field("Left", &self.left_ptr)
+            .field("Right", &self.right_ptr)
+            .field("Ops", &self.get_operator())
+            .finish()
+        // }
+    }
+}
+
+// #[derive(Debug)]
 pub struct Gene {
     pub type_of_gene: GeneType,
     pub left_ptr: usize,
@@ -144,7 +162,7 @@ impl Gene {
             type_of_gene: Unary,
             left_ptr: rand::thread_rng().gen_range(0..curr_loc),
             right_ptr: 0,
-            ops: functions::get_unary_function(),
+            ops: get_unary_function(),
         };
     }
 
@@ -175,7 +193,7 @@ impl Gene {
             type_of_gene: Binary,
             left_ptr: rand::thread_rng().gen_range(0..curr_loc),
             right_ptr: rand::thread_rng().gen_range(0..curr_loc),
-            ops: functions::get_binary_function(),
+            ops: get_binary_function(),
         };
     }
 
@@ -484,5 +502,57 @@ impl Display for Chromosome {
             string_builder.push(' ');
         }
         write!(f, "{}", string_builder)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use lazy_static::lazy_static;
+    use crate::functions::{add, log2, square};
+    use crate::io::read_csv;
+    use super::*;
+
+    lazy_static! {
+        static ref ROOT: Vec<Vec<f64>> = read_csv("test.csv");
+    }
+
+
+    #[test]
+    fn test_zero_constant() {
+        let result = Chromosome::new_from_genes_array(vec![Gene::new_constant(Option::from(0.0))]);
+        assert_eq!(result.evaluate_fitness(&ROOT[0]), 0.0);
+        assert_eq!(result.function_string(), "0");
+    }
+
+    #[test]
+    fn test_single_constant() {
+        let result = Chromosome::new_from_genes_array(vec![Gene::new_constant(Option::from(1.8))]);
+        assert_eq!(result.evaluate_fitness(&ROOT[0]), 1.8);
+        assert_eq!(result.function_string(), "1.8");
+    }
+
+    #[test]
+    fn test_single_variable() {
+        let result = Chromosome::new_from_genes_array(vec![Gene::new_variable(2)]);
+        assert_eq!(result.evaluate_fitness(&ROOT[0]), ROOT[0][2]);
+        assert_eq!(result.function_string(), "v2");
+    }
+
+    #[test]
+    fn test_single_unary_function() {
+        for func in vec![square, log2] {
+            let result = Chromosome::new_from_genes_array(vec![Gene::new_variable(1), Gene::new_unary2(0, func)]).evaluate_fitness(&ROOT[0]);
+            assert_eq!(result, func(ROOT[0][1], -1.0).0);
+        }
+    }
+
+    #[test]
+    /// Ensures that the fitness value of a binary function is calculated correctly
+    fn test_single_binary_function() {
+        for func in vec![add, subtract, divide, multiply, max, min] {
+            let result = Chromosome::new_from_genes_array(vec![Gene::new_variable(1), Gene::new_variable(2), Gene::new_binary2(0, 1, func)]); //.evaluate_fitness(&ROOT[0]);
+            println!("{:?}", result.genes);
+            assert_eq!(result.evaluate_fitness(&ROOT[0]), func(ROOT[0][1], ROOT[0][2]).0);
+        }
     }
 }

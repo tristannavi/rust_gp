@@ -1,5 +1,3 @@
-use std::thread;
-
 use rand::Rng;
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
 
