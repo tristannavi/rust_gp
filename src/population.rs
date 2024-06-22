@@ -15,7 +15,6 @@ pub struct PopulationParameters {
 pub trait PopulationTraits {
     fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64, dataset: &Dataset) -> f64;
     fn find_best_min(&mut self);
-    fn new() -> Population;
     fn tournament_selection(&self) -> &Chromosome;
     fn get_random_chromosome(&self) -> &Chromosome;
     fn all_accessed(&mut self);
@@ -120,23 +119,6 @@ impl PopulationTraits for Population {
         }
     }
 
-    /// Constructs a new `Population` object.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use std_genetics::Population;
-    ///
-    /// let population = Population::new();
-    /// ```
-    ///
-    /// # Returns
-    ///
-    /// A new `Population` object, initially empty.
-    fn new() -> Population {
-        return vec![] as Population;
-    }
-
     /// Performs tournament selection with k = 2 for the population
     ///
     /// Randomly selects two chromosomes and returns the one with the minimum fitness value.
@@ -164,7 +146,7 @@ impl PopulationTraits for Population {
 
     fn all_accessed(&mut self) {
         let mut count = 0;
-        for c in self {
+        for mut c in &mut self.population {
             if !c.accessed {
                 count += 1;
             }
