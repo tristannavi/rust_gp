@@ -17,8 +17,8 @@ pub fn gp(gen: usize, pop_size: usize, num_genes: usize, mut_chance: f64, crosso
     }
 
 
-    println!("{}", population.find_best_min().evaluate_fitness_mse(&dataset));
-    println!("{}", population.find_best_min().make_function_string(None, "".parse().unwrap()));
+    println!("{}", population.best.evaluate_fitness_mse(&dataset));
+    println!("{}", population.best.make_function_string(None, "".parse().unwrap()));
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
     crate::io::write_graph_data(fitness_graph, "gp_out.txt")

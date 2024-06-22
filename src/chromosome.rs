@@ -332,11 +332,11 @@ impl Chromosome {
     /// let c = Chromosome::new_x(5, 5)
     /// ```
     pub fn new_x(num_genes: usize, num_variables: usize) -> Chromosome {
-        let mut c = Chromosome::new();
-        for i in 0..num_genes {
-            c.genes.push(Gene::new_random_gene(i, num_variables, i == 1 || i == 0))
-        }
-        return c;
+        return Chromosome {
+            genes: (0..num_genes).into_iter().map(|_| Gene::new_random_gene(0, num_variables, true)).collect(),
+            fitness_value: f64::MAX,
+            accessed: false,
+        };
     }
 
     /// Evaluates the fitness of an individual based on a given vector of values.

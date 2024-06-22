@@ -1,7 +1,7 @@
 use std::thread;
 
 use rand::Rng;
-use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::chromosome::Chromosome;
 use crate::io::Dataset;
@@ -16,16 +16,20 @@ pub struct PopulationParameters {
 
 pub trait PopulationTraits {
     fn mate(&mut self, num_variables: usize, crossover_chance: f64, mutation_chance: f64, dataset: &Dataset) -> f64;
-    fn find_best_min(&self) -> Chromosome;
+    fn find_best_min(&mut self);
     fn new() -> Population;
     fn tournament_selection(&self) -> &Chromosome;
     fn get_random_chromosome(&self) -> &Chromosome;
     fn all_accessed(&mut self);
     fn initialize(size: usize, num_genes: usize, dataset: &Dataset) -> Population;
     fn evaluate(&mut self, dataset: &Dataset);
+    fn len(&self) -> usize;
 }
 
-pub type Population = Vec<Chromosome>;
+pub struct Population {
+    pub(crate) population: Vec<Chromosome>,
+    pub(crate) best: Chromosome,
+}
 
 impl PopulationTraits for Population {
     /// Mate the individuals in the population to create a new population.
@@ -79,11 +83,7 @@ impl PopulationTraits for Population {
             return (offspring_one, offspring_two);
         }
 
-        // Elitism by adding the best out of the entire population to the new population
-        let best = self.find_best_min();
-        let best_fitness = best.fitness_value;
-
-        let mut new_population: Population = (1..self.len())
+        let mut new_population: Vec<Chromosome> = (1..self.population.len())
             .into_par_iter()
             .step_by(2)
             .flat_map(|_| {
@@ -92,13 +92,14 @@ impl PopulationTraits for Population {
             })
             .collect();
 
-        // Add the best individual to the new population
-        new_population.push(best);
+        // Elitism by adding the best out of the entire population to the new population
+        new_population.push(self.best.clone()); // Population best has not been updated yet
 
         // Replace current Population with new Population
-        let _ = std::mem::replace(self, new_population);
+        self.population = new_population;
+
         self.evaluate(dataset);
-        return self.find_best_min().fitness_value;
+        return self.best.fitness_value;
     }
 
     /// Returns the chromosome with the minimum fitness value in the given `Population`.
@@ -113,14 +114,12 @@ impl PopulationTraits for Population {
     /// # Returns
     ///
     /// The chromosome with the minimum fitness value.
-    fn find_best_min(&self) -> Chromosome {
-        let mut best = &Chromosome::new();
-        for i in self {
-            if i.fitness_value < best.fitness_value {
-                best = i;
+    fn find_best_min(&mut self) {
+        for i in &self.population {
+            if i.fitness_value < self.best.fitness_value {
+                self.best = i.clone();
             }
         }
-        return best.clone();
     }
 
     /// Constructs a new `Population` object.
@@ -162,7 +161,7 @@ impl PopulationTraits for Population {
 
     /// Returns a reference to a randomly selected `Chromosome` from the `self` vector.
     fn get_random_chromosome(&self) -> &Chromosome {
-        return &self[rand::thread_rng().gen_range(0..self.len())];
+        return &self.population[rand::thread_rng().gen_range(0..self.len())];
     }
 
     fn all_accessed(&mut self) {
@@ -177,11 +176,11 @@ impl PopulationTraits for Population {
     }
 
     fn initialize(size: usize, num_genes: usize, dataset: &Dataset) -> Population {
-        let mut population = vec![];
-        for _p in 0..size {
-            population.push(Chromosome::new_x(num_genes, dataset[0].len() - 2))
-        }
-
+        let mut population = Population {
+            population: (0..size).into_iter().map(|_| Chromosome::new_x(num_genes, dataset[0].len() - 2)).collect(),
+            best: Chromosome::new(),
+        };
+        population.find_best_min();
         return population;
     }
 
@@ -212,6 +211,25 @@ impl PopulationTraits for Population {
     ///
     /// None.
     fn evaluate(&mut self, dataset: &Dataset) {
-        self.par_iter_mut().for_each(|mut i| { let _ = i.evaluate_fitness_mse(dataset); });
+        // let min = self.population.par_iter_mut().map(|mut i| { let _ = i.evaluate_fitness_mse(dataset); }).min();
+        self.population.par_iter_mut().for_each(|mut i| { let _ = i.evaluate_fitness_mse(dataset); });
+        self.find_best_min();
+    }
+
+    /// Returns the length of the population.
+    ///
+    /// # Returns
+    ///
+    /// The number of elements in the population.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let population = vec![1, 2, 3];
+    /// let count = len(&population);
+    /// assert_eq!(count, 3);
+    /// ```
+    fn len(&self) -> usize {
+        return self.population.len();
     }
 }
